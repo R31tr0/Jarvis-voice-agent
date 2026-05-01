@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jarvis Mic</title>
+</head>
+<body style="background:#000; color:#0ff; display:flex; flex-direction:column; align-items:center; justify-content:center; height:100vh; font-family:sans-serif;">
+    
+    <button id="micBtn" style="width:150px; height:150px; border-radius:50%; border:2px solid #0ff; background:none; color:#0ff; font-size:18px; box-shadow: 0 0 15px #0ff;">
+        ЖМИ И ГОВОРИ
+    </button>
+    <p id="result" style="margin-top:20px;"></p>
+
+    <script>
+        const btn = document.getElementById('micBtn');
+        const res = document.getElementById('result');
+        
+        // ТВОЙ IP ИЗ ВИТЕ
+        const IP = "10.38.239.84"; 
+
+        const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+        recognition.lang = 'ru-RU';
+
+        btn.onclick = () => {
+            recognition.start();
+            res.innerText = "Слушаю...";
+        };
+
+        recognition.onresult = (event) => {
+            const text = event.results[0][0].transcript;
+            res.innerText = "Ты: " + text;
+
+            // КИДАЕМ ТЕКСТ НА ПК ТАК ЖЕ, КАК ЕСЛИ БЫ ОН ПРИШЕЛ С КЛАВИАТУРЫ
+            fetch(`http://${IP}:8000/remote-voice`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ text: text })
+            });
+        };
+    </script>
+</body>
+</html>

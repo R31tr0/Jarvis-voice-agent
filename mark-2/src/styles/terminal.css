@@ -1,0 +1,80 @@
+.terminal-container {
+  background-color: rgba(10, 25, 35, 0.85); /* Полупрозрачный темный фон */
+  color: #00d2ff; /* Голубой цвет J.A.R.V.I.S. */
+  font-family: 'Share Tech Mono', 'Courier New', monospace; /* Моноширинный шрифт */
+  padding: 20px;
+  width: 400px;
+  height: 400px;
+  
+  /* Исправляем позиционирование */
+  position: absolute;
+  top: 100px;
+  left: 30px; 
+  
+  border: 1px solid #00d2ff;
+  border-radius: 10px;
+  box-shadow: 0 0 15px rgba(0, 210, 255, 0.3); /* Мягкое свечение корпуса */
+  
+  display: flex;
+  flex-direction: column;
+  overflow: hidden; /* Чтобы скрыть вылеты текста */
+  backdrop-filter: blur(5px); /* Эффект матового стекла */
+}
+
+.terminal-output {
+  flex: 1;
+  overflow-y: auto;
+  margin-bottom: 10px;
+  padding-right: 5px;
+}
+
+/* Кастомный скроллбар в стиле хайтек */
+.terminal-output::-webkit-scrollbar {
+  width: 4px;
+}
+.terminal-output::-webkit-scrollbar-thumb {
+  background: #00d2ff;
+  border-radius: 10px;
+}
+
+.terminal-line {
+  margin-bottom: 8px;
+  line-height: 1.2;
+  text-shadow: 0 0 5px rgba(0, 210, 255, 0.5); /* Свечение текста */
+  word-wrap: break-word;
+}
+
+.terminal-input-area {
+  display: flex;
+  align-items: center;
+  border-top: 1px solid rgba(0, 210, 255, 0.2);
+  padding-top: 10px;
+}
+
+.prompt {
+  color: #52ff00; /* Зеленый промпт для контраста */
+  margin-right: 10px;
+  font-weight: bold;
+}
+
+.terminal-input {
+  background: transparent;
+  border: none;
+  color: #fff;
+  font-family: inherit;
+  font-size: 16px;
+  flex: 1;
+  outline: none;
+  caret-color: #00d2ff; /* Цвет курсора */
+}
+
+/* Эффект для команд пользователя, чтобы они отличались от ответов системы */
+.terminal-line:contains("$") {
+  color: #fff;
+  opacity: 0.8;
+}
+@keyframes blink {
+  0% { opacity: 1; }
+  50% { opacity: 0.3; }
+  100% { opacity: 1; }
+}

@@ -1,0 +1,16 @@
+{
+  "manifest_version": 3,
+  "name": "Jarvis Media Control",
+  "version": "1.0",
+  "permissions": ["tabs", "scripting"],
+  "host_permissions": ["https://www.youtube.com/*"],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "externally_connectable": {
+    "matches": [
+      "http://localhost:*/*",
+      "https://localhost:*/*"
+    ]
+  }
+}

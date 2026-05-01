@@ -1,0 +1,85 @@
+.jarvis-panel {
+  width: 320px;
+  padding: 15px;
+  background: rgba(0, 20, 30, 0.4);
+  border-left: 3px solid #00d4ff;
+  font-family: 'Segoe UI', sans-serif;
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+   /* Позиционирование */
+  position: fixed;
+  left: 20px;   /* Отступ от левого края */
+  bottom: 20px; /* Отступ от нижнего края */
+  z-index: 9999; /* Чтобы панель была поверх всего */
+}
+.jarvis-panel-network {
+  width: 320px;
+  padding: 15px;
+  background: rgba(0, 20, 30, 0.4);
+  border-left: 3px solid #00d4ff;
+  font-family: 'Segoe UI', sans-serif;
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+   /* Позиционирование */
+  position: fixed;
+  right: 20px;   /* Отступ от правого края */
+  bottom: 30px; /* Отступ от нижнего края, выше панели с прогрессами */
+  z-index: 9999; /* Чтобы панель была поверх всего */
+}
+
+.jarvis-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.jarvis-info {
+  display: flex;
+  justify-content: space-between;
+  color: #00d4ff;
+  font-size: 10px;
+  font-weight: bold;
+  letter-spacing: 1px;
+  text-shadow: 0 0 10px rgba(0, 212, 255, 0.5);
+}
+
+.jarvis-track {
+  height: 4px;
+  background: rgba(0, 212, 255, 0.1);
+  border: 1px solid rgba(0, 212, 255, 0.2);
+  position: relative;
+  overflow: hidden;
+}
+
+.jarvis-fill {
+  height: 100%;
+  background: #00d4ff;
+  box-shadow: 0 0 12px #00d4ff;
+  transition: width 0.4s ease-out;
+  position: relative;
+}
+
+/* Эффект критического нагрева */
+.jarvis-item.warning .jarvis-info,
+.jarvis-item.warning .jarvis-fill {
+  color: #ff4d4d;
+  background: #ff4d4d;
+  box-shadow: 0 0 12px #ff4d4d;
+  text-shadow: 0 0 10px #ff4d4d;
+}
+
+/* Анимация "бегущего света" */
+.jarvis-glitch {
+  position: absolute;
+  top: 0; left: -100%;
+  width: 100%; height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.6), transparent);
+  animation: scan 2.5s infinite linear;
+}
+
+@keyframes scan {
+  0% { left: -100%; }
+  100% { left: 100%; }
+}
