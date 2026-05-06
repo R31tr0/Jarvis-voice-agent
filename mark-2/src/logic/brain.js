@@ -89,7 +89,9 @@ const extractJsonString = (raw) => { // Функция для извлечени
 export const askJarvis = async (userText, history = []) => {
   try {
     const result = await ai.models.generateContent({
-      model: "gemma-3-27b-it", 
+      // model: "gemma-3-27b-it", переход со старой версиии на более свежую базу если вам важна скорость используйте ее 
+      //если вам важна функция фикса ошибок лучше использовать gemma-4-31b-it она болеее стабильна в этом плане 
+      model: "gemini-3.1-flash-lite-preview", //просто поменяйте название если что !
       contents: [
         { role: "user", parts: [{ text: SYSTEM_PROMPT }] },
         // Приветствие системы тоже перевели на русский для единообразия
@@ -134,7 +136,7 @@ export const askJarvis = async (userText, history = []) => {
 export const screenshotAnalysis = async (base64Image, history = []) => {
   try {
     const result = await ai.models.generateContent({
-      model: "gemma-3-27b-it",
+      model: "gemma-4-31b-it", //так же переход на 4 версию тк как она лучше в плане анализа картинок 
       contents: [
         {
           role: "user",
