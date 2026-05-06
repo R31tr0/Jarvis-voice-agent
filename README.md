@@ -1,3 +1,4 @@
+<img width="7680" height="4320" alt="image" src="https://github.com/user-attachments/assets/a593d54c-59e7-4b1d-ae0e-6ec532c78ba6" />
 
 
 🤖 J.A.R.V.I.S. Project (Mark 3)

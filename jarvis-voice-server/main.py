@@ -19,6 +19,7 @@ import subprocess
 # import google.generativeai as genai
 from pydantic import BaseModel
 import AppOpener
+from AppOpener import close
 from telethon import TelegramClient, events
 from telethon.errors import SessionPasswordNeededError
 import requests
@@ -380,6 +381,35 @@ async def get_notification():
     latest_notification = None # Очищаем после выдачи
     return temp
 
+@app.get("/close")
+async def close_application(name: str, x_jarvis_token: str = Header(None)):
+    # 1. Сверяем токен
+    if x_jarvis_token != "my-ultra-secret-key-777":
+        raise HTTPException(
+            status_code=403, detail="Доступ запрещен, сэр."
+        )
+    
+    # Очищаем имя от лишних пробелов
+    app_name = name.strip()
+    
+    try:
+        # output=False отключает лишние принты AppOpener в консоль сервера
+        # match_closest=True помогает, если пришло "хром" вместо "google chrome"
+        close(app_name, match_closest=True, output=False)
+        
+        success_msg = f"Приложение {app_name} закрыто, сэр."
+        # Если generate_voice_logic — это async функция для озвучки:
+        await generate_voice_logic(success_msg)
+        
+        return {
+            "status": "success",
+            "message": f"закрыто приложение: {app_name}",
+        }
+        
+    except Exception as e:
+        error_msg = f"Не удалось закрыть {app_name}, сэр. Ошибка в процессе."
+        await generate_voice_logic(error_msg)
+        return {"status": "error", "message": str(e)}
 
 @app.get("/open")
 async def open_application(name: str, x_jarvis_token: str = Header(None)):
@@ -390,6 +420,7 @@ async def open_application(name: str, x_jarvis_token: str = Header(None)):
         )
 
     name_lower = name.lower().strip()
+            
 
     # 2. ПРОВЕРКА НА FULLSCREEN (Развертывание окна)
     if name_lower == "fullscreen":
