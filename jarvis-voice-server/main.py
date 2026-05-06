@@ -508,9 +508,14 @@ async def listen():
     return {"error": "Файл еще не создан"}
 # --- ЛОГИКА ГОЛОСА ---
 async def generate_voice_logic(text: str):
-    python_exe = os.path.join(".\\venv\\Scripts\\python.exe")
+    # Используем путь к текущему запущенному python.exe (автоматически найдет venv)
+    python_exe = sys.executable 
     my_env = os.environ.copy()
     my_env["PYTHONIOENCODING"] = "utf-8"
+
+    # Проверяем, что файл модели на месте
+    if not os.path.exists(MODEL_PATH):
+        return {"status": "error", "message": f"Модель не найдена по пути: {MODEL_PATH}"}
 
     command = [
         python_exe, "-m", "piper",
