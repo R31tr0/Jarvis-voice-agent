@@ -20,7 +20,7 @@ if not exist ".venv" (
 
 :: Установка зависимостей через .venv в корне
 echo [*] Installing requirements into root .venv...
-".venv\Scripts\pip.exe" install uvicorn fastapi pydantic psutil wmi pyautogui pyperclip AppOpener telethon requests httpx piper-tts
+".venv\Scripts\pip.exe" install uvicorn fastapi pydantic psutil wmi pyautogui pyperclip AppOpener telethon requests httpx piper-tts Pillow
 
 :: Запуск сервера из подпапки, используя .venv из корня
 if exist "jarvis-voice-server" (
