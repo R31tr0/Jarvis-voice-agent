@@ -2,8 +2,8 @@ from telethon import TelegramClient, events
 import requests
 
 # ВСТАВЬТЕ ВАШИ КЛЮЧИ ТУТ
-API_ID = 21409848
-API_HASH = 'f27beab9e22237b6ac0713fccd9c91bb'
+API_ID = 
+API_HASH = ''
 
 client = TelegramClient('jarvis_session', API_ID, API_HASH)
 
