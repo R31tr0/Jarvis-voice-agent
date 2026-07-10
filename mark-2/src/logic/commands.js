@@ -106,6 +106,8 @@ const getcopy = async (logAndSay) => {
 
 
 
+
+
 const screenshot = async (logAndSay, addLog, setHistory) => {
      const response = await fetch('http://localhost:8000/screenshot', {
         headers: {
@@ -335,7 +337,39 @@ for (const id of commands) {
         case"MARKS":
             marks(logAndSay);
         break;
+        
 
+        case "ANALYZE_LAST_2_MINUTES": {
+    addLog("Запрашиваю расшифровку последних 2 минут...");
+    try {
+        const res = await fetch('http://localhost:8000/analyze_last_2_minutes', {
+            headers: { 'X-Jarvis-Token': 'my-ultra-secret-key-777' }
+        });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+
+        const data = await res.json();
+        const transcript = data.transcript;
+
+        if (!transcript) {
+            await logAndSay("Сэр, за последние 2 минуты не зафиксировано разговора.");
+            break;
+        }
+
+        const analyzePrompt = `Вот расшифровка последних 2 минут разговора ${transcript} Проанализируй: о чём шла речь, если был спор — выбери сторону и дай аргументы, если загадка или задача — дай решение, если просто разговор и тебя просят пересказать — перескажи слово в слово.ЕСЛИ ТУТ СТРОЧКИ ИЗ ПЕСЕН НЕТУ НИКАКИХ СОБЕСЕДНИКОВ ПРОСТО СКАЖИ ЧТО ЗА ПЕСНЯ ! `;
+
+        const analyzeResponse = await askJarvis(analyzePrompt);
+        if (analyzeResponse && analyzeResponse.answer) {
+            await logAndSay(analyzeResponse.answer);
+        } else {
+            await logAndSay("Сэр, не удалось получить анализ за последние 2 минуты.");
+        }
+    } catch (error) {
+        console.error("Error in ANALYZE_LAST_2_MINUTES:", error);
+        await logAndSay("Сэр, ошибка при получении расшифровки за последние 2 минуты.");
+    }
+    break;
+}
+       
 
          case "START_TIMER":
     if (controls) {
