@@ -45,6 +45,8 @@ if exist "mark-2" (
 )
 
 echo ----------------------------------------
+timeout /t 5 > nul
+start http://localhost:5173
 echo All systems operational.
 echo ----------------------------------------
 pause
