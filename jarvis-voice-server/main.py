@@ -25,7 +25,12 @@ from telethon.errors import SessionPasswordNeededError
 import requests
 import httpx
 import json
-
+import collections
+import threading
+import soundcard as sc
+import numpy as np
+import sounddevice as sd
+from faster_whisper import WhisperModel
 
 # Принудительно устанавливаем стандартный вывод в UTF-8 для корректных логов
 sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
@@ -54,7 +59,17 @@ API_HASH = 0
 client = None
 # Создаем клиента, но НЕ запускаем его сразу
 
+# --- АУДИО-БУФЕР (АНАЛИЗ ПОСЛЕДНИХ 2 МИНУТ) ---
+AUDIO_SAMPLE_RATE = 16000
+AUDIO_SECONDS_TO_KEEP = 120
+AUDIO_MAX_SAMPLES = AUDIO_SAMPLE_RATE * AUDIO_SECONDS_TO_KEEP
 
+mic_buffer = collections.deque(maxlen=AUDIO_MAX_SAMPLES)
+system_buffer = collections.deque(maxlen=AUDIO_MAX_SAMPLES)
+
+whisper_model = None  # Инициализируется в startup_event, чтобы не грузить модель на каждый импорт
+mic_stream = None
+system_stream = None
 
 # --- TELEGRAM EVENTS ---
 
@@ -203,12 +218,98 @@ async def handle_incoming_telegram(event):
             })
 
 
+def mic_callback(indata, frames, time_info, status):
+    if status:
+        print("[AUDIO MIC]:", status)
+    mic_buffer.extend(indata[:, 0])
+
+
+def target_system_audio_loop():
+    """Фоновый цикл, который нативно перехватывает звук из наушников/динамиков"""
+    global system_buffer
+    try:
+        # 1. Получаем имя и ID дефолтных динамиков Realtek
+        default_speaker = sc.default_speaker()
+        
+        # 2. Ищем соответствующий им виртуальный loopback-микрофон
+        loopback_mic = None
+        for mic in sc.all_microphones(include_loopback=True):
+            # Проверяем совпадение по ID или по имени устройства
+            if mic.id == default_speaker.id or default_speaker.name in mic.name:
+                loopback_mic = mic
+                break
+        
+        if loopback_mic is None:
+            print("[AUDIO SYS ERROR]: Не удалось найти loopback-версию твоих динамиков.")
+            return
+
+        print(f"[AUDIO SYS]: soundcard успешно подключился к Loopback: {loopback_mic.name}")
+        
+        # 3. Вот теперь у этого объекта ТОЧНО есть метод recorder!
+        with loopback_mic.recorder(samplerate=AUDIO_SAMPLE_RATE, channels=1) as recorder:
+            while True:
+                # Читаем кусочки аудио по 1024 фрейма
+                data = recorder.record(numframes=1024)
+                # Сплющиваем массив и отправляем в буфер Джарвиса
+                system_buffer.extend(data.flatten())
+                
+    except Exception as e:
+        print(f"[AUDIO SYS ERROR]: Ошибка захвата loopback: {e}")
+def start_audio_capture():
+    """Запускает два независимых потока захвата: микрофон (sounddevice) + система (soundcard)"""
+    global mic_stream
+    
+    # 1. Захват микрофона через sounddevice (оставляем как было)
+    try:
+        mic_stream = sd.InputStream(
+            channels=1,
+            samplerate=AUDIO_SAMPLE_RATE,
+            callback=mic_callback,
+        )
+        mic_stream.start()
+        print("[SYSTEM]: Захват микрофона запущен.")
+    except Exception as e:
+        print(f"[ERROR]: Не удалось запустить захват микрофона: {e}")
+
+    # 2. Захват звука системы через soundcard в отдельном независимом потоке
+    try:
+        sys_thread = threading.Thread(target=target_system_audio_loop, daemon=True)
+        sys_thread.start()
+        print("[SYSTEM]: Захват системного звука (soundcard loopback) запущен.")
+    except Exception as e:
+        print(f"[ERROR]: Не удалось запустить loopback-захват: {e}")
+def get_last_2_minutes():
+    mic_data = np.array(mic_buffer, dtype=np.float32)
+    sys_data = np.array(system_buffer, dtype=np.float32)
+    return mic_data, sys_data
+
+def transcribe(audio_data: np.ndarray):
+    if audio_data.size == 0 or whisper_model is None:
+        return []
+    segments, _ = whisper_model.transcribe(audio_data, language="ru")
+    return [{"start": s.start, "text": s.text.strip()} for s in segments]
+
+def merge_transcripts(mic_segments, sys_segments):
+    tagged = (
+        [{"start": s["start"], "speaker": "Сэр", "text": s["text"]} for s in mic_segments] +
+        [{"start": s["start"], "speaker": "Собеседник", "text": s["text"]} for s in sys_segments]
+    )
+    tagged.sort(key=lambda x: x["start"])
+    return "\n".join(f'{t["speaker"]}: {t["text"]}' for t in tagged if t["text"])
 
 # Запуск фонового процесса при старте сервера (Запуск ТГ вместе с сервером)
 @app.on_event("startup")
 async def startup_event():
-    global client, API_ID, API_HASH
+    global client, API_ID, API_HASH, whisper_model
     asyncio.create_task(track_games_task())
+
+    # Загружаем Whisper один раз при старте, чтобы не тормозить первый запрос
+    print("[SYSTEM]: Загрузка модели Whisper...")
+    whisper_model = WhisperModel("small", device="cpu", compute_type="int8")
+    print("[SYSTEM]: Whisper готов.")
+
+    start_audio_capture()
+
     
     # 1. Проверяем, есть ли сохраненный конфиг
     if os.path.exists(CONFIG_FILE):
@@ -344,6 +445,21 @@ async def take_screenshot(x_jarvis_token: str = Header(None)):
         return {"screenshot": img_str} # Возвращаем строку в формате JSON
     except Exception as e:
         return {"error": str(e)}
+
+@app.get("/analyze_last_2_minutes")
+async def analyze_last_2_minutes(x_jarvis_token: str = Header(None)):
+    if x_jarvis_token != "my-ultra-secret-key-777":
+        raise HTTPException(status_code=403, detail="Доступ запрещен, сэр.")
+
+    mic_data, sys_data = get_last_2_minutes()
+    mic_segments = transcribe(mic_data)
+    sys_segments = transcribe(sys_data)
+    transcript = merge_transcripts(mic_segments, sys_segments)
+
+    if not transcript:
+        return {"transcript": ""}
+
+    return {"transcript": transcript}
 @app.post("/clipboardfixed")
 async def update_clipboard(data: ClipboardData):
     new_text = data.text
