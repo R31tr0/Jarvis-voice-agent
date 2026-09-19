@@ -87,6 +87,36 @@ if exist "%SERVER_DIR%\main.py" (
 cd /d "%ROOT_DIR%"
 echo [2/2] Checking Frontend...
 if exist "%FRONTEND_DIR%\package.json" (
+    where node >nul 2>&1
+    if errorlevel 1 (
+        echo [!] Node.js was not found. Installing it automatically...
+        where winget >nul 2>&1
+        if errorlevel 1 (
+            echo [!] winget is not available. Install Node.js manually and run this file again.
+            pause
+            exit /b 1
+        )
+        winget install --id OpenJS.NodeJS --exact --source winget --silent --accept-source-agreements --accept-package-agreements
+        if errorlevel 1 (
+            echo [!] Node.js installation failed or was cancelled.
+            pause
+            exit /b 1
+        )
+        :: Refresh PATH because winget changes are not visible to this process automatically.
+        set "PATH=%ProgramFiles%\nodejs;%LOCALAPPDATA%\Programs\nodejs;%PATH%"
+    )
+    where node >nul 2>&1
+    if errorlevel 1 (
+        echo [!] Node.js was installed but could not be found. Restart Windows and run this file again.
+        pause
+        exit /b 1
+    )
+    where npm >nul 2>&1
+    if errorlevel 1 (
+        echo [!] npm was not found. Reinstall Node.js and run this file again.
+        pause
+        exit /b 1
+    )
     if not exist "%FRONTEND_DIR%\node_modules" (
         echo [!] Running npm install...
         cd /d "%FRONTEND_DIR%"
