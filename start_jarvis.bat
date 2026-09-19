@@ -66,7 +66,15 @@ if not exist "%VENV_DIR%\Scripts\python.exe" (
 
 :: Установка зависимостей через .venv в корне
 echo [*] Installing requirements into root .venv...
-"%VENV_DIR%\Scripts\python.exe" -m pip install uvicorn fastapi pydantic psutil wmi pyautogui pyperclip AppOpener telethon requests httpx piper-tts Pillow sounddevice faster-whisper numpy soundcard
+:: Ignore broken global pip/SOCKS proxy settings for this direct PyPI install.
+set "HTTP_PROXY="
+set "HTTPS_PROXY="
+set "ALL_PROXY="
+set "http_proxy="
+set "https_proxy="
+set "all_proxy="
+set "PIP_CONFIG_FILE=NUL"
+"%VENV_DIR%\Scripts\python.exe" -m pip --isolated install uvicorn fastapi pydantic psutil wmi pyautogui pyperclip AppOpener telethon requests httpx piper-tts Pillow sounddevice faster-whisper numpy soundcard
 if errorlevel 1 (
     echo [!] Failed to install backend dependencies.
     pause
